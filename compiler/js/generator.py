@@ -3,8 +3,12 @@ import re
 from compiler.js import split_name, escape_package, get_package
 from compiler.js.component import component_generator
 from collections import OrderedDict
+import os.path
+
+import jinja2 as j2
 
 root_type = 'core.CoreObject'
+TEMPLATE_DIR = os.path.dirname(__file__)
 
 class generator(object):
 	def __init__(self, ns, bid):
@@ -18,6 +22,8 @@ class generator(object):
 		self.startup = []
 		self.l10n = {}
 		self.id_set = set(['context', 'model'])
+		with open(os.path.join(TEMPLATE_DIR, 'template.js')) as f:
+			self.template = j2.Template(f.read())
 
 	def add_component(self, name, component, declaration):
 		if name in self.components:
@@ -212,15 +218,9 @@ class generator(object):
 
 	def generate(self):
 		code = self.generate_components() + '\n' #must be called first, generates used_packages/components sets
-		text = ""
-		text += "/** @const */\n"
-		text += "var _globals = exports\n"
-		text += "%s\n" %self.generate_prologue()
-		text += "//========================================\n\n"
-		text += "/** @const @type {!CoreObject} */\n"
-		text += "var core = _globals.core.core\n"
-		text += code
-		text += "%s\n" %self.generate_imports()
+		prologue = self.generate_prologue()
+		imports = self.generate_imports()
+		text = self.template.render({ 'code': code, 'prologue': prologue, 'imports': imports })
 
 		text = "%s = %s();\n" %(self.ns, self.wrap(text))
 		return self.replace_args(text)
