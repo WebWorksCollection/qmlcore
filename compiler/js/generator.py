@@ -1,6 +1,6 @@
 import json
 import re
-from compiler.js import split_name, escape_package, get_package
+from compiler.js import split_name, escape_package, get_package, escape_id
 from compiler.js.component import component_generator
 from collections import OrderedDict
 import os.path
@@ -216,13 +216,39 @@ class generator(object):
 
 	re_copy_args = re.compile(r'COPY_ARGS\w*\((.*?),(.*?)(?:,(.*?))?\)')
 
-	def generate(self):
+	def generate(self, app, strict = True, release = False, verbose = False, manifest = {}, project_dirs = []):
+		init_js = ''
+		for project_dir in project_dirs:
+			init_path = os.path.join(project_dir, '.core.js')
+			if os.path.exists(init_path):
+				if verbose:
+					print 'including platform initialisation file at %s' %init_path
+				with open(init_path) as f:
+					init_js += f.read()
+
+		init_js = self.replace_args(init_js)
+
+		def write_properties(prefix, props):
+			r = ''
+			for k, v in sorted(props.iteritems()):
+				k = escape_id(k)
+				if isinstance(v, dict):
+					r += write_properties(prefix + '$' + k, v)
+				else:
+					r += "var %s$%s = %s\n" %(prefix, k, json.dumps(v))
+			return r
+
+		manifest_prologue = write_properties('$manifest', manifest)
+
+		startup = self.generate_startup(self.ns, app)
+
 		code = self.generate_components() #must be called first, generates used_packages/components sets
 		prologue = self.generate_prologue()
 		imports = self.generate_imports()
-		text = self.template.render({ 'code': code, 'prologue': prologue, 'imports': imports })
 
-		text = "%s = %s();\n" %(self.ns, self.wrap(text))
+		text = self.template.render({ 'code': code, 'prologue': prologue, 'imports': imports, 'strict': strict, 'release': release, 'manifest': manifest_prologue, 'startup': startup, 'ns': self.ns })
+
+		text = text.replace('/* ${init.js} */', init_js)
 		return self.replace_args(text)
 
 	def replace_args(self, text):
