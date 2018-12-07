@@ -217,7 +217,7 @@ class generator(object):
 	re_copy_args = re.compile(r'COPY_ARGS\w*\((.*?),(.*?)(?:,(.*?))?\)')
 
 	def generate(self):
-		code = self.generate_components() + '\n' #must be called first, generates used_packages/components sets
+		code = self.generate_components() #must be called first, generates used_packages/components sets
 		prologue = self.generate_prologue()
 		imports = self.generate_imports()
 		text = self.template.render({ 'code': code, 'prologue': prologue, 'imports': imports })

@@ -7,4 +7,5 @@ var _globals = exports
 /** @const @type {!CoreObject} */
 var core = _globals.core.core
 {{ code }}
+
 {{ imports }}
