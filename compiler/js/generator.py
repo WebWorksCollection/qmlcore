@@ -24,6 +24,8 @@ class generator(object):
 		self.id_set = set(['context', 'model'])
 		with open(os.path.join(TEMPLATE_DIR, 'template.js')) as f:
 			self.template = j2.Template(f.read())
+		with open(os.path.join(TEMPLATE_DIR, 'copy_args.js')) as f:
+			self.copy_args = j2.Template(f.read())
 
 	def add_component(self, name, component, declaration):
 		if name in self.components:
@@ -265,34 +267,9 @@ class generator(object):
 	def replace_args(self, text):
 		#COPY_ARGS optimization
 		def copy_args(m):
-			def expr(var, op, idx):
-				if idx != 0:
-					return "%s %s %d" %(var, op, idx)
-				else:
-					return var
-
 			name, idx, prefix = m.group(1).strip(), int(m.group(2).strip()), m.group(3)
-			if prefix is not None:
-				prefix = prefix.strip()
-				return """
-		/* %s */
-		var $n = arguments.length
-		var %s = new Array(%s)
-		%s[0] = %s
-		for(var $i = %d; $i < $n; ++$i) {
-			%s[%s] = arguments[$i]
-		}
-""" %(m.group(0), name, expr('$n', '+', 1 - idx), name, prefix, idx, name, expr('$i', '+', 1 - idx)) #format does not work well here, because of { }
-			else:
-				return """
-		/* %s */
-		var $n = arguments.length
-		var %s = new Array(%s)
-		var $d = 0, $s = %d;
-		while($s < $n) {
-			%s[$d++] = arguments[$s++]
-		}
-""" %(m.group(0), name, expr('$n', '-', idx), idx, name)
+			context = { 'name': name, 'index': idx, 'prefix': prefix, 'extra': 1 - idx, 'source': m.group(0) }
+			return self.copy_args.render(context)
 
 		text = generator.re_copy_args.sub(copy_args, text)
 		return text
