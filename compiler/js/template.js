@@ -15,6 +15,23 @@ var {{ns}} = (function() {/** @const */
 	{{ code }}
 
 	{{ imports }}
-	return exports
-})()
-{{ startup }}
+
+	return exports;
+} )();
+{% if module %}
+module.exports = {{ns}}
+module.exports.run = function(nativeContext) {
+{% endif %}
+
+try {
+	var l10n = {{ l10n }}
+
+	var context = {{ns}}._context = new qml.{{context_type}}(null, false, {id: 'qml-context-{{app}}', l10n: l10n, nativeContext: {% if module %} nativeContext {% else %} null {% endif %}})
+	context.init()
+	{{ startup }}
+} catch(ex) { log("{{ns}} initialization failed: ", ex, ex.stack) }
+{% if module %}
+
+	return context
+}
+{% endif %}

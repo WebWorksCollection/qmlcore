@@ -240,13 +240,24 @@ class generator(object):
 
 		manifest_prologue = write_properties('$manifest', manifest)
 
-		startup = self.generate_startup(self.ns, app)
-
 		code = self.generate_components() #must be called first, generates used_packages/components sets
 		prologue = self.generate_prologue()
 		imports = self.generate_imports()
 
-		text = self.template.render({ 'code': code, 'prologue': prologue, 'imports': imports, 'strict': strict, 'release': release, 'manifest': manifest_prologue, 'startup': startup, 'ns': self.ns })
+		text = self.template.render({
+			'code': code,
+			'prologue': prologue,
+			'imports': imports,
+			'strict': strict,
+			'release': release,
+			'manifest': manifest_prologue,
+			'startup': "\n".join(self.startup),
+			'ns': self.ns,
+			'app': app,
+			'l10n': json.dumps(self.l10n),
+			'context_type': self.find_component('core', 'Context')
+
+		})
 
 		text = text.replace('/* ${init.js} */', init_js)
 		return self.replace_args(text)
@@ -285,27 +296,6 @@ class generator(object):
 
 		text = generator.re_copy_args.sub(copy_args, text)
 		return text
-
-	def generate_startup(self, ns, app):
-		r = ""
-		if self.module:
-			r += "module.exports = %s\n" %ns
-			r += "module.exports.run = function(nativeContext) { "
-		r += "try {\n"
-
-		context_type = self.find_component('core', 'Context')
-
-		startup = []
-		startup.append('\tvar l10n = %s\n' %json.dumps(self.l10n))
-		startup.append("\tvar context = %s._context = new qml.%s(null, false, {id: 'qml-context-%s', l10n: l10n, nativeContext: %s})" %(ns, context_type, app, 'nativeContext' if self.module else 'null'))
-		startup.append('\tcontext.init()')
-		startup += self.startup
-		r += "\n".join(startup)
-		r += "\n} catch(ex) { log(\"%s initialization failed: \", ex, ex.stack) }\n" %ns
-		if self.module:
-			r += "return context\n"
-			r += "}"
-		return r
 
 	def add_ts(self, path):
 		from compiler.ts import Ts
