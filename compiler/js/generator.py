@@ -117,10 +117,6 @@ class generator(object):
 			self.used_packages.add(package)
 
 	def generate_components(self):
-		#finding explicit @using declarations in code
-		for name, code in self.imports.iteritems():
-			self.scan_using(code)
-
 		context_type = self.find_component('core', 'Context')
 		context_gen = self.components[context_type]
 		for i, pi in enumerate(context_gen.properties):
@@ -152,7 +148,7 @@ class generator(object):
 				if name not in code:
 					code[name] = self.generate_component(component)
 
-		r = ''
+		r = []
 		order = []
 		visited = set([root_type])
 		def visit(type):
@@ -166,7 +162,7 @@ class generator(object):
 			visit(type)
 
 		for type in order:
-			r += code[type].decode('utf-8')
+			r.append(code[type].decode('utf-8'))
 
 		return r
 
@@ -242,12 +238,16 @@ class generator(object):
 
 		manifest_prologue = write_properties('$manifest', manifest)
 
-		code = self.generate_components() #must be called first, generates used_packages/components sets
+		#finding explicit @using declarations in code
+		for name, code in self.imports.iteritems():
+			self.scan_using(code)
+
+		components = self.generate_components() #must be called first, generates used_packages/components sets
 		prologue = self.generate_prologue()
 		imports = self.generate_imports()
 
 		text = self.template.render({
-			'code': code,
+			'components': components,
 			'prologue': prologue,
 			'imports': imports,
 			'strict': strict,
@@ -258,7 +258,6 @@ class generator(object):
 			'app': app,
 			'l10n': json.dumps(self.l10n),
 			'context_type': self.find_component('core', 'Context')
-
 		})
 
 		text = text.replace('/* ${init.js} */', init_js)

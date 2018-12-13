@@ -12,7 +12,9 @@ var {{ns}} = (function() {/** @const */
 
 	/** @const @type {!CoreObject} */
 	var core = _globals.core.core
-	{{ code }}
+	{% for component in components -%}
+		{{ component }}
+	{%- endfor %}
 
 	{{ imports }}
 
