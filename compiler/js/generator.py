@@ -95,8 +95,6 @@ class generator(object):
 		return "%s.%s" %(package_name, name)
 
 	def generate_component(self, gen):
-		name = gen.name
-
 		self.used_packages.add(gen.package)
 
 		code = ''
