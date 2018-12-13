@@ -17,6 +17,7 @@ var {{ns}} = (function() {/** @const */
 //=====[component {{component.type}}]=====================
 
 		{{ component.code }}
+		{{ component.prototype }}
 	{%- endfor %}
 
 	{{ imports }}

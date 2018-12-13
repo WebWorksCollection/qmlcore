@@ -97,10 +97,10 @@ class generator(object):
 	def generate_component(self, gen):
 		self.used_packages.add(gen.package)
 
-		code = ''
-		code += gen.generate(self)
-		code += gen.generate_prototype(self)
-		return code
+		context = {'type': gen.name}
+		context['code'] = gen.generate(self).decode('utf-8')
+		context['prototype'] = gen.generate_prototype(self).decode('utf-8')
+		return context
 
 	used_re = re.compile(r'@using\s*{(.*?)}')
 
@@ -158,7 +158,7 @@ class generator(object):
 			visit(type)
 
 		for type in order:
-			r.append({ 'code': code[type].decode('utf-8'), 'type': type })
+			r.append(code[type])
 
 		return r
 
