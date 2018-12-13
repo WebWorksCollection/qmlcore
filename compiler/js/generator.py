@@ -100,9 +100,7 @@ class generator(object):
 		self.used_packages.add(gen.package)
 
 		code = ''
-		code += "\n\n//=====[component %s]=====================\n\n" %name
 		code += gen.generate(self)
-
 		code += gen.generate_prototype(self)
 		return code
 
@@ -162,7 +160,7 @@ class generator(object):
 			visit(type)
 
 		for type in order:
-			r.append(code[type].decode('utf-8'))
+			r.append({ 'code': code[type].decode('utf-8'), 'type': type })
 
 		return r
 
